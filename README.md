@@ -127,6 +127,10 @@ Outputs:
 
 Use the notebook `notebooks/TinyLoRA_2D_Loss_Surface.ipynb` to visualize heatmap/contours.
 
+## Reports
+
+- Loss-surface writeup PDF: [`reports/tinylora_loss_surface_report.pdf`](reports/tinylora_loss_surface_report.pdf)
+
 ## Known Limitations / TODOs
 
 - GRPO in this repo is simplified REINFORCE-style (group-relative baseline with summed log-probs), not a full PPO-style GRPO implementation.
