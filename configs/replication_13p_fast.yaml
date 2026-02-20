@@ -1,0 +1,25 @@
+project:
+  name: TinyLoRA
+  run_prefix: gsm8k_qwen7b
+
+experiment:
+  model_name: Qwen/Qwen2.5-7B-Instruct
+  budget: 13
+  seed: 1
+  learning_rates: [1e-7, 5e-7, 1e-6, 5e-6, 1e-5, 1e-4, 2e-4]
+  epochs: 1
+  batch_prompts: 2
+  group_size: 2
+  train_limit: 64
+  eval_limit: 64
+  max_prompt_tokens: 512
+  max_new_tokens: 128
+
+dataset:
+  dataset_name: gsm8k
+  dataset_config: main
+  train_split: train
+  eval_split: test
+  question_field: question
+  answer_field: answer
+

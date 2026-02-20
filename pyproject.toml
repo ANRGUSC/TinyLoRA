@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tinylora-public"
+version = "0.1.0"
+description = "TinyLoRA public research pack for 13-parameter adaptation and 2D loss-surface analysis."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+authors = [
+  {name = "Bhaskar Krishnamachari"},
+]
+dependencies = [
+  "torch",
+  "transformers",
+  "datasets",
+  "numpy",
+  "pyyaml",
+  "pandas",
+  "matplotlib",
+]
+
+[tool.setuptools.packages.find]
+include = ["tinylora*"]
+
