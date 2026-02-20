@@ -17,6 +17,7 @@ This code is designed to be faithful to the TinyLoRA core parameterization from:
 
 - John X. Morris, Niloofar Mireshghallah, Mark Ibrahim, Saeed Mahloujifar,  
   *Learning to Reason in 13 Parameters* (arXiv:2602.04118).
+- Paper PDF: https://arxiv.org/pdf/2602.11481
 
 Implemented core elements:
 
@@ -147,4 +148,3 @@ python scripts/train_sft_tinylora.py \
 ## License
 
 Apache License 2.0 (see `LICENSE`).
-
