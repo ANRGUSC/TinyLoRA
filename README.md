@@ -25,8 +25,7 @@ Implemented core elements:
 - TinyLoRA adapter with frozen SVD factors and a tiny trainable coefficient vector.
 - Tie-sharing across target projection modules.
 - Budget planning to match very small trainable parameter counts (including 13).
-
-See `AUDIT.md` for detailed implementation notes and known deviations.
+- `\boxed{...}` and `#### ...` exact-match answer extraction for math-style outputs.
 
 ## Layout
 
@@ -59,6 +58,13 @@ pip install -r requirements.txt
 python -m unittest discover -s tests -p "test_*.py" -v
 ```
 
+## Config Presets
+
+- Fast/dev preset: `configs/replication_13p_fast.yaml`
+- Paper-aligned GSM8K preset: `configs/replication_13p_paper_gsm8k.yaml`
+  - Uses large settings (`batch_prompts=64`, `max_new_tokens=4096`, full train/eval limits).
+  - Requires substantially more compute than the fast preset.
+
 ## Reproduce 13-Parameter Sweep (Fast Preset)
 
 ```bash
@@ -87,6 +93,8 @@ For higher-fidelity runs, increase:
 - `--train-limit`, `--eval-limit`
 - `--epochs`
 - decoding lengths
+
+For a paper-aligned GSM8K run target, see `configs/replication_13p_paper_gsm8k.yaml`.
 
 ## Run 2D SFT Loss Surface (Budget=2)
 
@@ -118,6 +126,14 @@ Outputs:
 - `best_point.json`
 
 Use the notebook `notebooks/TinyLoRA_2D_Loss_Surface.ipynb` to visualize heatmap/contours.
+
+## Known Limitations / TODOs
+
+- GRPO in this repo is simplified REINFORCE-style (group-relative baseline with summed log-probs), not a full PPO-style GRPO implementation.
+- Full per-token policy-ratio clipping, explicit importance sampling ratios, and integrated KL-penalty machinery are not implemented in the current RL script.
+- The paper's VERL + vLLM training/inference stack is not reproduced here; scripts use standard Hugging Face `transformers`.
+- The GRPO training loop currently favors clarity over maximal memory efficiency and is not fully batched across all prompt/group axes.
+- Adapter scaling uses `alpha / projection_dim`; this is an implementation choice and differs from a literal reading of the paper formula when `projection_dim > 1`.
 
 ## Swapping Model or Dataset
 

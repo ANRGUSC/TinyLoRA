@@ -28,6 +28,7 @@ from tinylora.training_utils import (
     choose_dtype,
     grad_norm,
     load_trainable_state_dict,
+    safe_torch_load,
     serialize_torch_state,
     set_global_seed,
     trainable_state_dict,
@@ -93,6 +94,16 @@ def _policy_logprob_sum_for_generated(
     return token_logp[:, start:end].sum()
 
 
+def _generate_with_eval_mode(model: torch.nn.Module, **kwargs) -> torch.Tensor:
+    was_training = bool(model.training)
+    model.eval()
+    with torch.no_grad():
+        outputs = model.generate(**kwargs)
+    if was_training:
+        model.train()
+    return outputs
+
+
 @torch.no_grad()
 def evaluate_pass_at_1(
     model: torch.nn.Module,
@@ -111,7 +122,8 @@ def evaluate_pass_at_1(
         enc = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=max_prompt_tokens)
         input_ids = enc["input_ids"].to(device)
         attention_mask = enc["attention_mask"].to(device)
-        out = model.generate(
+        out = _generate_with_eval_mode(
+            model,
             input_ids=input_ids,
             attention_mask=attention_mask,
             max_new_tokens=max_new_tokens,
@@ -158,9 +170,9 @@ def _try_resume(
     if not train_state_path.exists() or not adapter_state_path.exists() or not optim_state_path.exists():
         return None
     train_state = json.loads(train_state_path.read_text(encoding="utf-8"))
-    adapter_state = torch.load(adapter_state_path, map_location="cpu")
+    adapter_state = safe_torch_load(adapter_state_path, map_location="cpu")
     load_trainable_state_dict(model, adapter_state)
-    optim_state = torch.load(optim_state_path, map_location="cpu")
+    optim_state = safe_torch_load(optim_state_path, map_location="cpu")
     optimizer.load_state_dict(optim_state)
     return train_state
 
@@ -290,7 +302,8 @@ def main(argv: list[str]) -> int:
             # Generate group completions for GRPO-style relative advantages.
             expanded_ids = input_ids.repeat(args.group_size, 1)
             expanded_mask = attention_mask.repeat(args.group_size, 1)
-            outputs = model.generate(
+            outputs = _generate_with_eval_mode(
+                model,
                 input_ids=expanded_ids,
                 attention_mask=expanded_mask,
                 do_sample=True,
@@ -329,11 +342,11 @@ def main(argv: list[str]) -> int:
         loss.backward()
         if args.grad_clip > 0:
             torch.nn.utils.clip_grad_norm_(trainable, args.grad_clip)
+        gnorm = grad_norm(trainable)
         optimizer.step()
 
         train_state["global_step"] = step_idx + 1
         avg_reward = float(rewards_acc / max(1, sample_count))
-        gnorm = grad_norm(trainable)
         metric_row = {
             "step": train_state["global_step"],
             "epoch": train_state["epoch"],

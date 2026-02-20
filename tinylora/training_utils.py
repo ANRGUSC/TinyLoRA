@@ -46,9 +46,17 @@ def serialize_torch_state(state: dict[str, Any]) -> bytes:
     return buffer.getvalue()
 
 
+def safe_torch_load(source: Any, map_location: str | torch.device = "cpu") -> Any:
+    try:
+        return torch.load(source, map_location=map_location, weights_only=True)
+    except TypeError:
+        # Backward compatibility for torch versions without weights_only.
+        return torch.load(source, map_location=map_location)
+
+
 def deserialize_torch_state(blob: bytes) -> dict[str, Any]:
     buffer = io.BytesIO(blob)
-    return torch.load(buffer, map_location="cpu")
+    return safe_torch_load(buffer, map_location="cpu")
 
 
 def trainable_state_dict(model: torch.nn.Module) -> dict[str, torch.Tensor]:

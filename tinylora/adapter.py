@@ -164,6 +164,7 @@ class TinyLoRALinear(nn.Module):
         self.frozen_rank = min(frozen_rank, self.in_features, self.out_features)
         self.projection_dim = projection_dim
         self.alpha = float(alpha)
+        # LoRA-style scaling by projection dimension.
         self.scale = self.alpha / float(max(1, self.projection_dim))
         self.merged = False
         self.enabled = True
@@ -198,8 +199,17 @@ class TinyLoRALinear(nn.Module):
         self.register_buffer("P", p)
 
         if shared_v is None:
+            v_generator = torch.Generator(device="cpu")
+            v_generator.manual_seed(int(seed))
+            v = torch.zeros(self.projection_dim, dtype=torch.float32, device=device)
+            # Keep direct-construction behavior aligned with inject_tinylora.
+            v += 1e-3 * torch.randn(
+                self.projection_dim,
+                generator=v_generator,
+                dtype=torch.float32,
+            ).to(device=device)
             self.v = nn.Parameter(
-                torch.zeros(self.projection_dim, dtype=torch.float32, device=device),
+                v,
                 requires_grad=True,
             )
         else:

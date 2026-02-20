@@ -7,6 +7,7 @@ import torch.nn as nn
 
 from tinylora.adapter import (
     TinyLoRAConfig,
+    TinyLoRALinear,
     build_tie_groups,
     choose_budget_plan,
     choose_tie_factor_for_budget,
@@ -126,6 +127,13 @@ class TinyLoRATests(unittest.TestCase):
                 self.assertEqual(module.bias.dtype, torch.bfloat16)
             self.assertEqual(module.v.device, module.weight.device)
             self.assertEqual(module.P.device, module.weight.device)
+
+    def test_direct_tinylora_init_is_deterministic_and_nonzero(self) -> None:
+        linear = nn.Linear(8, 8)
+        lora1 = TinyLoRALinear(linear=linear, frozen_rank=2, projection_dim=2, alpha=1.0, seed=123)
+        lora2 = TinyLoRALinear(linear=linear, frozen_rank=2, projection_dim=2, alpha=1.0, seed=123)
+        self.assertTrue(torch.allclose(lora1.v.detach(), lora2.v.detach()))
+        self.assertGreater(float(lora1.v.detach().abs().sum().item()), 0.0)
 
 
 if __name__ == "__main__":
